@@ -1,35 +1,42 @@
 package com.file.converter.fileconverter.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.file.converter.fileconverter.domain.Book;
 import com.file.converter.fileconverter.exception.FileProcessingException;
-import com.file.converter.fileconverter.service.FileContentConverter;
-import com.file.converter.fileconverter.service.FileContentConverterProvider;
+import com.file.converter.fileconverter.service.File;
+import com.file.converter.fileconverter.service.FileAdapter;
+import com.file.converter.fileconverter.service.FileParser;
+import com.file.converter.fileconverter.service.ParserProvider;
 import com.file.converter.fileconverter.service.FileToJsonService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
 public class FileToJsonServiceImpl implements FileToJsonService {
-    private final FileContentConverterProvider contentConverterProvider;
+    private final ParserProvider<List<Book>> bookListParserProvider;
+    private final FileAdapter<MultipartFile> fileAdapter;
 
     @Override
     public InputStream processFile(MultipartFile multipartFile) {
-        final String fileContentType = multipartFile.getContentType();
-        final FileContentConverter fileContentConverter = contentConverterProvider.getByContentType(fileContentType);
+        final File file = fileAdapter.adapt(multipartFile);
+        final FileParser<File, List<Book>> parser = bookListParserProvider.getParser(file.getClass());
 
-        try (InputStream fileInputStream = multipartFile.getInputStream()) {
-            final byte[] inputBytes  = fileInputStream.readAllBytes();
-            final byte[] outputBytes = fileContentConverter.convert(inputBytes);
-            return new ByteArrayInputStream(outputBytes);
+        final List<Book> parsedBooks = parser.parse(file);
+
+        try {
+            final byte[] jsonBytes = new ObjectMapper().writeValueAsBytes(parsedBooks);
+
+            return new ByteArrayInputStream(jsonBytes);
         }
-        catch (IOException e) {
+        catch (JsonProcessingException e) {
             throw new FileProcessingException();
         }
     }
-
 }
