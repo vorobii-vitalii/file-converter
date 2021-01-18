@@ -1,5 +1,6 @@
 package com.file.converter.fileconverter.exception.handler;
 
+import com.file.converter.fileconverter.exception.FileFormatNotRecognizedException;
 import com.file.converter.fileconverter.exception.FileFormatNotSupportedException;
 import com.file.converter.fileconverter.exception.FileProcessingException;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,11 @@ public class GeneralExceptionHandler {
     @ExceptionHandler(FileProcessingException.class)
     public ResponseEntity<String> handleFileProcessingFailed(FileProcessingException ignored) {
         return new ResponseEntity<>("Processing of the file failed", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(FileFormatNotRecognizedException.class)
+    public ResponseEntity<String> handleFileFormatNotRecognized(FileFormatNotRecognizedException ignored) {
+        return new ResponseEntity<>("Input's file format is not recognized", HttpStatus.BAD_REQUEST);
     }
 
 }
